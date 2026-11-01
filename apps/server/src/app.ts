@@ -6,12 +6,13 @@ import { dirname, resolve } from "node:path";
 import { lstat, readFile, readdir, unlink } from "@toonflow/file";
 import type { Request, Response, NextFunction } from "express";
 import buildRoute from "@/core";
-import { errorFromCause } from "@/lib/responseFormat";
+import { error, errorFromCause } from "@/lib/responseFormat";
 import desktopRequest from "@/lib/desktop";
 import { getRuntimePlatform } from "@/lib/platform";
 import initializePlugins from "@/utils/plugins/initialize";
 import { languageRequest, resolveRequestLocale, runWithLocale, setLocaleFallback, translateError, translateMessage } from "@/lib/i18n";
 import { detectLocale, normalizeLocale } from "@toonflow/i18n";
+import { createWebAuth, type readWebAuthConfig } from "@/lib/webAuth";
 
 const autoInstallProviders = ["apiMart.ts", "metaso.ts", "compshare.ts"];
 
@@ -26,6 +27,7 @@ export async function createApp({
   skillsRoot,
   agentsRoot,
   pluginRevision,
+  webAuth,
 }: {
   webRoot: string;
   appVersion?: string;
@@ -37,6 +39,7 @@ export async function createApp({
   skillsRoot?: string;
   agentsRoot?: string;
   pluginRevision?: string;
+  webAuth?: ReturnType<typeof readWebAuthConfig>;
 }) {
   // conf 由下方的路由动态加载，必须先确定整个进程共用的数据目录。
   if (dataDirectory) process.env.TOONFLOW_DATA_DIR = resolve(dataDirectory);
@@ -107,8 +110,25 @@ export async function createApp({
     await buildRoute();
     app.use(logger("dev"));
   }
-  app.use(cors());
   app.use(languageRequest);
+  if (webAuth) {
+    const { authorizeMcp } = await import("@/utils/mcp/control");
+    const { authenticateA2a } = await import("@/agent/a2a/settings");
+    const { appOperations } = await import("@/utils/mcp/operations");
+    const auth = createWebAuth(webAuth, request => {
+      if (request.path === "/mcp" || request.path.startsWith("/mcp/")) return authorizeMcp(request);
+      if (request.path.startsWith("/a2a/")) return Boolean(authenticateA2a(request));
+      return false;
+    }, appOperations);
+    app.locals.webAuth = auth;
+    app.use(auth.middleware);
+    app.use("/api/auth", ...auth.bodyParser);
+    app.use("/api/auth", (cause: Error & { status?: number }, _request: Request, response: Response, _next: NextFunction) => {
+      // 解析器异常可能携带原始密码请求体，不传入通用日志。
+      const status = cause.status === 413 ? 413 : 400;
+      response.status(status).json(error("登录请求格式不正确或内容过大", null, status));
+    });
+  } else app.use(cors());
   app.use("/a2a", express.json({ limit: "2mb" }));
   app.use(["/api/workspaces/files/write", "/api/assets/save"], express.raw({ type: "application/octet-stream", limit: "100mb" }));
   app.use(express.json({ limit: "100mb" }));

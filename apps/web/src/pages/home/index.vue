@@ -25,6 +25,10 @@
         </button>
       </nav>
       <div class="sidebarFooter">
+        <a v-if="webAuthEnabled" class="sidebarItem" href="/login" aria-label="登录管理" title="登录管理">
+          <icon-lock :size="18" aria-hidden="true" />
+          <span class="sidebarText">登录管理</span>
+        </a>
         <homeAdvertisementCarousel class="sidebarPromotion" :advertisements="advertisements.sidebar" @activate="activateAdvertisement" />
         <button class="sidebarItem deviceButton" :class="{ connected: deviceHubEnabled || mobileConnection.online === true }" type="button" :aria-label="mobileConnectionLabel" :title="mobileConnectionLabel" @click="mobileConnectVisible = true">
           <span class="sidebarIcon">
@@ -143,6 +147,7 @@ import { deviceHubEnabled, mobileConnection, mobileConnectionLabel } from "@/lib
 import useWorkspaceFiles from "@/lib/workspaceFiles";
 import saveFile from "@/lib/saveFile";
 import http from "@/lib/http";
+import { webAuthEnabled } from "@/lib/webAuth";
 import { waitForControlValue } from "@/lib/mcpControl";
 import settings from "@/components/settings/index.vue";
 import assetLibraryDialog from "./assetLibraryDialog.vue";

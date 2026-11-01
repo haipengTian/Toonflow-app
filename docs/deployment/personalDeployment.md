@@ -4,8 +4,8 @@
 `haipengTian/server-ops` 的 `toonflow/`。服务器只拉取镜像，不构建源码。
 
 首版基于上游 `v2.0.9`，对应提交 `d7366e36ba30943cf308121c28011b45bbf922e0`。
-个人发布标签为 `v2.0.9-custom.1`，镜像为
-`ghcr.io/haipengtian/toonflow:2.0.9-custom.1`，目标平台为 Linux amd64。
+个人发布标签为 `v2.0.9-custom.2`，镜像为
+`ghcr.io/haipengtian/toonflow:2.0.9-custom.2`，目标平台为 Linux amd64。
 发布标签不可复用；修改代码后递增 `custom.N`。
 
 ## 发布镜像
@@ -15,8 +15,8 @@
 
 ```bash
 git push -u origin codex/toonflow-self-hosting
-git tag v2.0.9-custom.1
-git push origin v2.0.9-custom.1
+git tag v2.0.9-custom.2
+git push origin v2.0.9-custom.2
 ```
 
 以上命令在已提交个人部署改动后执行。标签触发 `Personal Docker image`，使用仓库自带的
@@ -40,5 +40,22 @@ git push origin v2.0.9-custom.1
 ## 服务器安装
 
 按 `server-ops/toonflow/README.md` 操作。默认仅监听 `127.0.0.1:3014`，
-通过 SSH 隧道访问。项目、插件、素材和模型配置全部持久化在 `/opt/toonflow/app`。
-自部署页面和业务 API 没有独立登录鉴权；公网入口需要额外认证。
+通过主机 nginx 提供 `https://toonflow.thpvip.xyz`。项目、插件、素材和模型配置全部持久化在 `/opt/toonflow/app`。
+`custom.2` 支持独立 server 的单管理员登录；桌面调用 `createApp` 默认保持原行为。
+
+## 公网登录配置
+
+使用 `server-ops/toonflow/setup-auth.sh` 在服务器终端交互设置密码。配置：
+
+- `TOONFLOW_AUTH_ENABLED=true`：开启鉴权，缺少有效配置时拒绝启动。
+- `TOONFLOW_PUBLIC_ORIGIN=https://toonflow.thpvip.xyz`：不带路径或末尾斜杠的来源地址。
+- `TOONFLOW_AUTH_USERNAME=admin`。
+- `TOONFLOW_AUTH_PASSWORD_HASH`：32 字节随机盐和 Node scrypt 默认参数生成的 64 字节密钥，格式为 `saltHex:keyHex`，不保存原始密码。
+
+HTTPS 会话使用 `__Host-` Cookie（HttpOnly、Secure、SameSite=Strict），24 小时绝对过期；重启需要重新登录。
+登录管理在首页侧栏，可退出当前浏览器；改密码后重建容器使所有会话失效。
+写请求必须带与配置相同的 Origin，或同源 Referer；原有 MCP/A2A 客户端仍使用其各自有效 Bearer。
+内部 MCP 应用操作使用进程随机凭据、loopback 和方法/路径白名单，不给公网 API 增加匿名旁路。
+`/api/auth/session` 只返回鉴权开关和当前会话状态，健康检查还须确认匿名业务 API 返回 401。
+反代保留公网 Host、设置 X-Forwarded-Proto；不把应用容器端口绑定公网。
+登录入口不提供注册；这是私人管理员工作台，不是多租户服务。
