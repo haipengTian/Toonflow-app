@@ -4,8 +4,8 @@
 `haipengTian/server-ops` 的 `toonflow/`。服务器只拉取镜像，不构建源码。
 
 首版基于上游 `v2.0.9`，对应提交 `d7366e36ba30943cf308121c28011b45bbf922e0`。
-个人发布标签为 `v2.0.9-custom.2`，镜像为
-`ghcr.io/haipengtian/toonflow:2.0.9-custom.2`，目标平台为 Linux amd64。
+个人发布标签为 `v2.0.9-custom.3`，镜像为
+`ghcr.io/haipengtian/toonflow:2.0.9-custom.3`，目标平台为 Linux amd64。
 发布标签不可复用；修改代码后递增 `custom.N`。
 
 ## 发布镜像
@@ -15,8 +15,8 @@
 
 ```bash
 git push -u origin codex/toonflow-self-hosting
-git tag v2.0.9-custom.2
-git push origin v2.0.9-custom.2
+git tag v2.0.9-custom.3
+git push origin v2.0.9-custom.3
 ```
 
 以上命令在已提交个人部署改动后执行。标签触发 `Personal Docker image`，使用仓库自带的
@@ -42,6 +42,21 @@ git push origin v2.0.9-custom.2
 按 `server-ops/toonflow/README.md` 操作。默认仅监听 `127.0.0.1:3014`，
 通过主机 nginx 提供 `https://toonflow.thpvip.xyz`。项目、插件、素材和模型配置全部持久化在 `/opt/toonflow/app`。
 `custom.2` 支持独立 server 的单管理员登录；桌面调用 `createApp` 默认保持原行为。
+
+## 使用 Sub2API 的 Muse 模型
+
+`custom.3` 内置「Sub2API / Muse」。升级后打开「设置 → 媒体模型」，在该供应商的
+「编辑模型」中填写 Sub2API 地址和 API Key，保存后即可在画布选择「Muse 图片」或「Muse 视频」。
+地址可以是 `https://proxy.thpvip.xyz` 或带 `/v1` 的形式；不填写 Muse2API 的上游密钥。
+若尚未安装该供应商，点击「添加供应商」选择「Sub2API / Muse」，无需导入代码。
+
+预置 `muse-image`、`muse-video`，支持单次一张图片、最多四张参考图，以及文生/参考图视频。
+视频默认请求 6 秒，可选择 480p、720p、1080p；时长、分辨率和画面比例是 Muse 的生成提示，
+以实际成品为准。视频任务接单后保存完整 `muse:` ID，复查时只查询原任务；
+成品通过同一把 Sub2API Key 在后端下载并保存到工作区，浏览器不需要直接携带网关 Key 播放。
+
+Sub2API 使用已发布的 `0.2.19-custom.2` 或更新版本，分组需放行两个模型并允许媒体生成。
+用自己的 Key 实际生成图片和视频会产生费用；构建及界面检查不调用真实生成接口。
 
 ## 公网登录配置
 

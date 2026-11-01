@@ -14,7 +14,7 @@ import { languageRequest, resolveRequestLocale, runWithLocale, setLocaleFallback
 import { detectLocale, normalizeLocale } from "@toonflow/i18n";
 import { createWebAuth, type readWebAuthConfig } from "@/lib/webAuth";
 
-const autoInstallProviders = ["apiMart.ts", "metaso.ts", "compshare.ts"];
+const autoInstallProviders = ["apiMart.ts", "metaso.ts", "compshare.ts", "sub2apiMuse.ts"];
 
 export async function createApp({
   webRoot,
