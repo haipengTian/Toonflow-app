@@ -11,7 +11,8 @@ COPY . .
 # ACT: 保留工作区与依赖以兼容运行时动态加载；需要缩减镜像时再拆分构建阶段。
 RUN bun install --frozen-lockfile
 
-RUN bun run build:server \
+ARG appVersion=2.0.0
+RUN appVersion="$appVersion" bun run build:server \
     && mkdir -p data/workspaces/myProject \
     && chown -R bun:bun data
 
